@@ -1,0 +1,6 @@
+[workspace]
+members = [
+	"homework/leaders_in_array",
+	"homework/kadane_algorithm",
+	"homework/missing_number",
+]
