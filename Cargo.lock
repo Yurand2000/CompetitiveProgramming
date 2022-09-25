@@ -13,3 +13,11 @@ version = "0.1.0"
 [[package]]
 name = "missing_number"
 version = "0.1.0"
+
+[[package]]
+name = "sliding_window_maximum"
+version = "0.1.0"
+
+[[package]]
+name = "trapping_rain_water"
+version = "0.1.0"

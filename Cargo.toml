@@ -3,4 +3,6 @@ members = [
 	"homework/leaders_in_array",
 	"homework/kadane_algorithm",
 	"homework/missing_number",
+	"homework/trapping_rain_water",
+	"homework/sliding_window_maximum",
 ]
