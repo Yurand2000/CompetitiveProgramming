@@ -5,4 +5,7 @@ members = [
 	"homework/missing_number",
 	"homework/trapping_rain_water",
 	"homework/sliding_window_maximum",
+	"homework/crossing_the_desert",
+
+	"extra/first_bad_version"
 ]

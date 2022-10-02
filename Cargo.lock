@@ -3,6 +3,14 @@
 version = 3
 
 [[package]]
+name = "crossing_the_desert"
+version = "0.1.0"
+
+[[package]]
+name = "first_bad_version"
+version = "0.1.0"
+
+[[package]]
 name = "kadane_algorithm"
 version = "0.1.0"
 
