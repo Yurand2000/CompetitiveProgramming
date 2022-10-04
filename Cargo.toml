@@ -6,6 +6,11 @@ members = [
 	"homework/trapping_rain_water",
 	"homework/sliding_window_maximum",
 	"homework/crossing_the_desert",
+	"homework/next_greater_element",
+	"homework/towers",
+	"homework/the_monkey_and_the_oiled_bamboo",
+	"homework/inversion_count",
+	"homework/two_types_of_spell",
 
 	"extra/first_bad_version"
 ]

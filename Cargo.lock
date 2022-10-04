@@ -11,6 +11,10 @@ name = "first_bad_version"
 version = "0.1.0"
 
 [[package]]
+name = "inversion_count"
+version = "0.1.0"
+
+[[package]]
 name = "kadane_algorithm"
 version = "0.1.0"
 
@@ -23,9 +27,25 @@ name = "missing_number"
 version = "0.1.0"
 
 [[package]]
+name = "next_greater_element"
+version = "0.1.0"
+
+[[package]]
 name = "sliding_window_maximum"
 version = "0.1.0"
 
 [[package]]
+name = "the_monkey_and_the_oiled_bamboo"
+version = "0.1.0"
+
+[[package]]
+name = "towers"
+version = "0.1.0"
+
+[[package]]
 name = "trapping_rain_water"
+version = "0.1.0"
+
+[[package]]
+name = "two_types_of_spell"
 version = "0.1.0"
