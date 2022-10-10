@@ -16,7 +16,7 @@ fn main() {
         64 * 1024,
         128 * 1024,
     ];
-    let ks = [8, 16, 32, 64, 128, 256, 512, 1024];
+    let ks = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024];
 
     // Write csv header
     let mut output_text: String = "Method,n,k,elapsed\n".to_string();

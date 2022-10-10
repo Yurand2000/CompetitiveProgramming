@@ -133,47 +133,40 @@ pub fn gen_random_vector(n: usize) -> Vec<i32> {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_idiomatic_version() {
-        let k = 3;
-        let v = gen_random_vector(100);
+    fn _test_function(n: usize, k: i32, funct: fn(&Vec<i32>, i32) -> Vec<i32>) {
+        let v = gen_random_vector(n);
 
-        let results = brute_force_idiomatic(&v, k);
+        let results = funct(&v, k);
         let truth = brute_force(&v, k);
 
         assert_eq!(results, truth);
+    }
+
+    fn test_function(funct: fn(&Vec<i32>, i32) -> Vec<i32>) {
+        _test_function(100, 1, funct);
+        _test_function(100, 3, funct);
+        _test_function(100, 30, funct);
+        _test_function(100, 70, funct);
+        _test_function(100, 100, funct);
+    }
+
+    #[test]
+    fn test_idiomatic_version() {
+        test_function(brute_force_idiomatic);
     }
 
     #[test]
     fn test_heap_version() {
-        let k = 3;
-        let v = gen_random_vector(100);
-
-        let results = heap(&v, k);
-        let truth = brute_force(&v, k);
-
-        assert_eq!(results, truth);
+        test_function(heap);
     }
 
     #[test]
     fn test_bst_version() {
-        let k = 3;
-        let v = gen_random_vector(100);
-
-        let results = bst(&v, k);
-        let truth = brute_force(&v, k);
-
-        assert_eq!(results, truth);
+        test_function(bst);
     }
 
     #[test]
     fn test_linear_version() {
-        let k = 3;
-        let v = gen_random_vector(100);
-
-        let results = linear(&v, k);
-        let truth = brute_force(&v, k);
-
-        assert_eq!(results, truth);
+        test_function(linear);
     }
 }
