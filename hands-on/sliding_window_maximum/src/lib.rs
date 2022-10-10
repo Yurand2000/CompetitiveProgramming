@@ -22,27 +22,25 @@ pub fn brute_force_idiomatic(v: &Vec<i32>, k: i32) -> Vec<i32> {
 
 pub fn heap(nums: &Vec<i32>, k: i32) -> Vec<i32> {
     let k = k as usize;
-
-    let mut heap: BinaryHeap<i32> = BinaryHeap::with_capacity( k );
-    let mut past_of_window: BinaryHeap<i32> = BinaryHeap::new();
+    let mut window: BinaryHeap<i32> = BinaryHeap::with_capacity( k );
+    let mut before_window: BinaryHeap<i32> = BinaryHeap::new();
     let mut maximums: Vec<i32> = Vec::with_capacity( nums.len() );
 
     for i in nums[..k].iter() {
-        heap.push(*i);
+        window.push(*i);
     }
 
-    maximums.push( *heap.peek().unwrap() );
-    for i in k..nums.len()
-    {
-        heap.push(nums[i]);
-        past_of_window.push(nums[i-k]);
+    maximums.push( *window.peek().unwrap() );
+    for i in k..nums.len() {
+        window.push(nums[i]);
+        before_window.push(nums[i - k]);
 
-        while !past_of_window.is_empty() && past_of_window.peek().unwrap() == heap.peek().unwrap() {
-            past_of_window.pop();
-            heap.pop();
+        while !before_window.is_empty() && before_window.peek().unwrap() == window.peek().unwrap() {
+            before_window.pop();
+            window.pop();
         }
 
-        maximums.push( *heap.peek().unwrap() );
+        maximums.push( *window.peek().unwrap() );
     }
 
     maximums
@@ -50,7 +48,6 @@ pub fn heap(nums: &Vec<i32>, k: i32) -> Vec<i32> {
 
 pub fn bst(nums: &Vec<i32>, k: i32) -> Vec<i32> {
     let k = k as usize;
-
     let mut bst: BinarySearchTree<i32> = BinarySearchTree::new();
     let mut maximums: Vec<i32> = Vec::with_capacity( nums.len() );
 
@@ -59,9 +56,8 @@ pub fn bst(nums: &Vec<i32>, k: i32) -> Vec<i32> {
     }
 
     maximums.push( *bst.max().unwrap() );
-    for i in k..nums.len()
-    {
-        bst.remove(&nums[i-k]);
+    for i in k..nums.len() {
+        bst.remove(&nums[i - k]);
         bst.insert(nums[i]);
         maximums.push( *bst.max().unwrap() );
     }
@@ -72,55 +68,53 @@ pub fn bst(nums: &Vec<i32>, k: i32) -> Vec<i32> {
 pub fn linear(nums: &Vec<i32>, k: i32) -> Vec<i32> {
     let k = k as usize;
     let mut maximums: Vec<i32> = Vec::new();
-    let mut queue = SlidingWindowQueue::new();
+    let mut queue = SlidingWindowQueue::with_capacity(k);
 
     for (pos, &curr) in nums[..k].iter().enumerate() {
         queue.push(curr, pos);
     }
 
-    maximums.push(queue.max());
-    for (pos, &curr) in nums[k..].iter().enumerate()
-    {
+    maximums.push( queue.max() );
+    for (pos, &curr) in nums[k..].iter().enumerate() {
         queue.pop(pos);
         queue.push(curr, pos + k);
-        maximums.push(queue.max());
+        maximums.push( queue.max() );
     }
 
     maximums
 }
-struct SlidingWindowQueue
-{
-    deque: VecDeque<(i32, usize)>
+struct SlidingWindowQueue {
+    deque: VecDeque<(i32, usize)>,
 }
 
-impl SlidingWindowQueue
-{
-    fn new() -> SlidingWindowQueue
-    {
-        SlidingWindowQueue{deque: VecDeque::new()}
-    }
-
-    fn push(&mut self, val: i32, pos: usize)
-    {
-        if self.deque.len() > 0 && self.deque.back().unwrap().0 < val {
-            self.deque.pop_back();
-            self.push(val, pos)
-        }
-        else {
-            self.deque.push_back( (val, pos) );
+impl SlidingWindowQueue {
+    fn with_capacity(capacity: usize) -> SlidingWindowQueue {
+        SlidingWindowQueue {
+            deque: VecDeque::with_capacity(capacity),
         }
     }
 
-    fn pop(&mut self, left_pos: usize)
-    {
-        if self.deque.len() > 0 && self.deque.front().unwrap().1 <= left_pos {
-            self.deque.pop_front();
-            self.pop(left_pos);
+    fn push(&mut self, val: i32, pos: usize) {
+        match self.deque.back() {
+            Some(&(n, _)) if n < val => {
+                self.deque.pop_back();
+                self.push(val, pos);
+            }
+            _ => self.deque.push_back( (val, pos) )
         }
     }
 
-    fn max(&self) -> i32
-    {
+    fn pop(&mut self, left_pos: usize) {
+        match self.deque.front() {
+            Some(&(_, pos)) if pos <= left_pos => {
+                self.deque.pop_front();
+                self.pop(left_pos);
+            }
+            _ => (),
+        }
+    }
+
+    fn max(&self) -> i32 {
         self.deque.front().unwrap().0
     }
 }
