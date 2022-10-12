@@ -22,25 +22,22 @@ pub fn brute_force_idiomatic(v: &Vec<i32>, k: i32) -> Vec<i32> {
 
 pub fn heap(nums: &Vec<i32>, k: i32) -> Vec<i32> {
     let k = k as usize;
-    let mut window: BinaryHeap<i32> = BinaryHeap::with_capacity( k );
-    let mut before_window: BinaryHeap<i32> = BinaryHeap::new();
-    let mut maximums: Vec<i32> = Vec::with_capacity( nums.len() );
+    let mut window: BinaryHeap<(i32, usize)> = BinaryHeap::with_capacity( k );
+    let mut maximums: Vec<i32> = Vec::with_capacity( number_of_windows(nums.len(), k) );
 
-    for i in nums[..k].iter() {
-        window.push(*i);
+    for (pos, &val) in nums[..k].iter().enumerate() {
+        window.push( (val, pos) );
     }
 
-    maximums.push( *window.peek().unwrap() );
-    for i in k..nums.len() {
-        window.push(nums[i]);
-        before_window.push(nums[i - k]);
+    maximums.push( window.peek().unwrap().0 );
+    for (pos, &val) in nums[k..].iter().enumerate() {
+        window.push( (val, pos + k) );
 
-        while !before_window.is_empty() && before_window.peek().unwrap() == window.peek().unwrap() {
-            before_window.pop();
+        while window.peek().unwrap().1 <= pos {
             window.pop();
         }
 
-        maximums.push( *window.peek().unwrap() );
+        maximums.push( window.peek().unwrap().0 );
     }
 
     maximums
@@ -49,7 +46,7 @@ pub fn heap(nums: &Vec<i32>, k: i32) -> Vec<i32> {
 pub fn bst(nums: &Vec<i32>, k: i32) -> Vec<i32> {
     let k = k as usize;
     let mut bst: BinarySearchTree<i32> = BinarySearchTree::new();
-    let mut maximums: Vec<i32> = Vec::with_capacity( nums.len() );
+    let mut maximums: Vec<i32> = Vec::with_capacity( number_of_windows(nums.len(), k) );
 
     for &i in nums[..k].iter() {
         bst.insert(i);
@@ -67,7 +64,7 @@ pub fn bst(nums: &Vec<i32>, k: i32) -> Vec<i32> {
 
 pub fn linear(nums: &Vec<i32>, k: i32) -> Vec<i32> {
     let k = k as usize;
-    let mut maximums: Vec<i32> = Vec::new();
+    let mut maximums: Vec<i32> = Vec::with_capacity( number_of_windows(nums.len(), k) );
     let mut queue = SlidingWindowQueue::with_capacity(k);
 
     for (pos, &curr) in nums[..k].iter().enumerate() {
@@ -83,6 +80,11 @@ pub fn linear(nums: &Vec<i32>, k: i32) -> Vec<i32> {
 
     maximums
 }
+
+fn number_of_windows(nums: usize, k: usize) -> usize {
+    nums - k + 1
+}
+
 struct SlidingWindowQueue {
     deque: VecDeque<(i32, usize)>,
 }
@@ -145,9 +147,11 @@ mod tests {
     fn test_function(funct: fn(&Vec<i32>, i32) -> Vec<i32>) {
         _test_function(100, 1, funct);
         _test_function(100, 3, funct);
-        _test_function(100, 30, funct);
-        _test_function(100, 70, funct);
-        _test_function(100, 100, funct);
+        _test_function(150, 30, funct);
+        _test_function(200, 70, funct);
+        _test_function(200, 100, funct);
+        _test_function(200, 150, funct);
+        _test_function(200, 200, funct);
     }
 
     #[test]
