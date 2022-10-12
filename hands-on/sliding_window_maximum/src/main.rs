@@ -7,26 +7,30 @@ use sliding_window_maximum::{
 
 fn main() {
     let ns = [
+        256,
+        512,
         1024,
         2 * 1024,
         4 * 1024,
         8 * 1024,
         16 * 1024,
         32 * 1024,
-        64 * 1024,
-        128 * 1024,
     ];
-    let ks = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024];
+
+    let mut ks: Vec<i32> = Vec::new();
+    ks.push(1); ks.push(2);
+    for i in (4..1025).step_by(4) { ks.push(i); }
 
     // Write csv header
     let mut output_text: String = "Method,n,k,elapsed\n".to_string();
 
     for &n in ns.iter() {
+        println!("Now computing with n: {}", n);
         for &k in ks.iter() {
             if k as usize > n {
                 continue;
             }
-            let nums = gen_random_vector(n);
+            let nums = gen_ordered_vector(n);
 
             // Brute force
             let (elapsed_times, _) = measure_elapsed_time(brute_force, &nums, k);
@@ -43,16 +47,16 @@ fn main() {
             );
             output_text.push_str(&row);
 
-            // Heap
-            let (elapsed_times, _) = measure_elapsed_time(heap, &nums, k);
-            let min_elapsed = *elapsed_times.iter().min().unwrap();
-            let row = format!("{},{},{},{}\n", "Heap", n, k, min_elapsed);
-            output_text.push_str(&row);
-
             // Bst
             let (elapsed_times, _) = measure_elapsed_time(bst, &nums, k);
             let min_elapsed = *elapsed_times.iter().min().unwrap();
             let row = format!("{},{},{},{}\n", "BST", n, k, min_elapsed);
+            output_text.push_str(&row);
+
+            // Heap
+            let (elapsed_times, _) = measure_elapsed_time(heap, &nums, k);
+            let min_elapsed = *elapsed_times.iter().min().unwrap();
+            let row = format!("{},{},{},{}\n", "Heap", n, k, min_elapsed);
             output_text.push_str(&row);
 
             // Linear
@@ -84,4 +88,13 @@ fn measure_elapsed_time(
     }
 
     (elapsed_times, results)
+}
+
+pub fn gen_ordered_vector(n: usize) -> Vec<i32> {
+    let mut nums: Vec<i32> = Vec::with_capacity(n);
+    for i in (0..n).rev() {
+        nums.push(i as i32);
+    }
+
+    nums
 }
