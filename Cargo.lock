@@ -63,6 +63,10 @@ name = "first_bad_version"
 version = "0.1.0"
 
 [[package]]
+name = "frogs_and_mosquitoes"
+version = "0.1.0"
+
+[[package]]
 name = "getrandom"
 version = "0.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"

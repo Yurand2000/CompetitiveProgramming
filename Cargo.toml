@@ -13,6 +13,7 @@ members = [
 	"homework/the_monkey_and_the_oiled_bamboo",
 	"homework/inversion_count",
 	"homework/two_types_of_spell",
+	"homework/frogs_and_mosquitoes",
 
 	"extra/first_bad_version"
 ]
