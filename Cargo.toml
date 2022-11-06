@@ -15,6 +15,7 @@ members = [
 	"homework/two_types_of_spell",
 	"homework/frogs_and_mosquitoes",
 	"homework/maximum_path_sum",
+	"homework/longest_k_good_segment",
 
 	"extra/first_bad_version"
 ]
