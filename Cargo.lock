@@ -116,6 +116,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "329c933548736bc49fd575ee68c89e8be4d260064184389a5b77517cddd99ffb"
 
 [[package]]
+name = "little_girl_and_maximum_sum"
+version = "0.1.0"
+
+[[package]]
 name = "longest_k_good_segment"
 version = "0.1.0"
 
@@ -135,6 +139,10 @@ version = "0.1.0"
 
 [[package]]
 name = "next_greater_element"
+version = "0.1.0"
+
+[[package]]
+name = "number_of_ways"
 version = "0.1.0"
 
 [[package]]
