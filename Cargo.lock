@@ -82,6 +82,10 @@ name = "homework-sliding_window_maximum"
 version = "0.1.0"
 
 [[package]]
+name = "ilya_and_queries"
+version = "0.1.0"
+
+[[package]]
 name = "inversion_count"
 version = "0.1.0"
 

@@ -16,6 +16,9 @@ members = [
 	"homework/frogs_and_mosquitoes",
 	"homework/maximum_path_sum",
 	"homework/longest_k_good_segment",
+	"homework/ilya_and_queries",
+	"homework/number_of_ways",
+	"homework/little_girl_and_maximum_sum",
 
 	"extra/first_bad_version"
 ]
