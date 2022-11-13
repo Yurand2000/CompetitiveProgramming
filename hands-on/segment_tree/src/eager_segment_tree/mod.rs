@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use crate::traits::*;
 use crate::utils::*;
 
@@ -7,19 +9,24 @@ struct EagerSegmentTreeNode<T> {
     size: usize
 }
 
-pub struct EagerSegmentTree<T>
-    where T: Monoid {
+pub struct EagerSegmentTree<T, Op, F>
+    where T: Clone, Op: Default + Monoid<Data = T>,
+        F: UpdateFunction<Data = T>
+{
     values: Vec< EagerSegmentTreeNode<T> >,
-    max_range: usize
+    max_range: usize,
+    _op : PhantomData<Op>,
+    _fn : PhantomData<F>
 }
 
-impl<T> EagerSegmentTree<T>
-    where T: Monoid
+impl<T, Op, F> EagerSegmentTree<T, Op, F>
+    where T: Clone, Op: Default + Monoid<Data = T>,
+        F: UpdateFunction<Data = T>
 {
     pub fn new(vec: Vec<T>) -> Self {
         let array_len = vec.len();
         let tree_size = 2 * array_len - 1;
-        let mut values = vec![EagerSegmentTreeNode { data: T::identity(), size: 1 }; tree_size];
+        let mut values = vec![EagerSegmentTreeNode { data: Op::identity(), size: 1 }; tree_size];
 
         //copy input array
         values.iter_mut().rev().zip(vec.into_iter().rev())
@@ -29,7 +36,7 @@ impl<T> EagerSegmentTree<T>
         //compute segment tree
         for i in (0..(tree_size-array_len)).rev()
         {
-            values[i].data = T::op(
+            values[i].data = Op::op(
                 &values[ lchild(i) ].data,
                 &values[ rchild(i) ].data
             );
@@ -39,19 +46,7 @@ impl<T> EagerSegmentTree<T>
                 values[ rchild(i) ].size;
         }
 
-        Self { values, max_range: array_len }
-    }
-
-    pub fn query(&self, range: (isize, isize)) -> T {
-        let (l, r) = range;
-        let max_range = self.max_range as isize;
-        if l > r || l > max_range {
-            T::identity()
-        } else if r > max_range - 1 {
-            self.query_index((l, max_range), 0 )
-        } else {
-            self.query_index(range, 0)
-        }
+        Self { values, max_range: array_len, _op: Default::default(), _fn: Default::default() }
     }
 
     fn query_index(&self, (l, r): (isize, isize), index: usize) -> T {
@@ -64,7 +59,7 @@ impl<T> EagerSegmentTree<T>
         else if l >= node_size || r < 0
         {
             //no overlap
-            T::identity()
+            Op::identity()
         }
         else
         {
@@ -75,20 +70,11 @@ impl<T> EagerSegmentTree<T>
             let left = self.query_index((l, m), lchild(index));
             let right = self.query_index((0, r - (m + 1)), rchild(index));
 
-            T::op(&left, &right)
+            Op::op(&left, &right)
         }
     }
 
-    pub fn update<F>(&mut self, (l, r): (usize, usize), f: F) 
-        where F: UpdateFunction<NodeData = T>
-    {
-        for i in l..=r.min(self.max_range - 1) {
-            self.update_single( self.leaf_index(i), &f);
-        }
-    }
-
-    fn update_single<F>(&mut self, index: usize, f: &F)
-        where F: UpdateFunction<NodeData = T>
+    fn update_single(&mut self, index: usize, f: &F)
     {
         self.values[index].data = f.apply(
             &self.values[index].data,
@@ -102,15 +88,41 @@ impl<T> EagerSegmentTree<T>
         }
     }
 
-    #[inline] fn leaf_index(&self, index: usize) -> usize {
-        leaf_index(self.values.len(), self.max_range, index)
-    }
-
     #[inline] fn recompute_node(&mut self, index: usize) {
         let left = &self.values[ lchild(index) ].data;
         let right = &self.values[ rchild(index) ].data;
 
-        self.values[index].data = T::op(left, right);
+        self.values[index].data = Op::op(left, right);
+    }
+}
+
+impl<T, Op, F> SegmentTree for EagerSegmentTree<T, Op, F>
+    where T: Clone, Op: Default + Monoid<Data = T>,
+        F: UpdateFunction<Data = T>
+{
+    type Data = T;
+    type UpdateFn = F;
+
+    fn query(&mut self, (l, r): (isize, isize)) -> Self::Data {
+        let max_range = self.max_range as isize;
+        if l > r || l > max_range {
+            Op::identity()
+        } else if r > max_range - 1 {
+            self.query_index((l, max_range), 0 )
+        } else {
+            self.query_index((l, r), 0)
+        }
+    }
+
+    fn update(&mut self, (l, r): (isize, isize), f: Self::UpdateFn)
+    {
+        for index in (l as usize).max(0) ..= (r as usize).min(self.max_range - 1)
+        {
+            self.update_single(
+                self.values.len() - self.max_range + index,
+                &f
+            );
+        }
     }
 }
 

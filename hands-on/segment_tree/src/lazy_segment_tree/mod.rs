@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use crate::traits::*;
 use crate::utils::*;
 
@@ -7,20 +9,23 @@ struct LazySegmentTreeNode<T> {
     size: usize
 }
 
-pub struct LazySegmentTree<T, F>
-    where T: Monoid, F: UpdateFunction<NodeData = T> + ComposableFunction + Monoid {
+pub struct LazySegmentTree<T, Op, F>
+    where T: Clone, Op: Default + Monoid<Data = T>,
+        F: UpdateFunction<Data = T> + ComposableFunction + Monoid
+{
     values: Vec< LazySegmentTreeNode<T> >,
     updates: Vec< F >,
-    max_range: usize
+    max_range: usize,
+    _op : PhantomData<Op>
 }
 
-impl<T, F> LazySegmentTree<T, F>
-    where T: Monoid, F: UpdateFunction<NodeData = T> + ComposableFunction + Monoid
+impl<T, Op, F> LazySegmentTree<T, Op, F>
+    where T: Clone, Op: Default + Monoid<Data = T>, F: UpdateFunction<Data = T> + ComposableFunction + Monoid + Clone
 {
     pub fn new(vec: Vec<T>) -> Self {
         let array_len = vec.len();
         let tree_size = 2 * array_len - 1;
-        let mut values = vec![LazySegmentTreeNode { data: T::identity(), size: 1 }; tree_size];
+        let mut values = vec![LazySegmentTreeNode { data: Op::identity(), size: 1 }; tree_size];
         let updates = vec![F::identity(); tree_size];
 
         //copy input array
@@ -31,7 +36,7 @@ impl<T, F> LazySegmentTree<T, F>
         //compute segment tree
         for i in (0..(tree_size-array_len)).rev()
         {
-            values[i].data = T::op(
+            values[i].data = Op::op(
                 &values[ lchild(i) ].data,
                 &values[ rchild(i) ].data
             );
@@ -41,19 +46,7 @@ impl<T, F> LazySegmentTree<T, F>
                 values[ rchild(i) ].size;
         }
 
-        Self { values, updates, max_range: array_len }
-    }
-
-    pub fn query(&mut self, range: (isize, isize)) -> T {
-        let (l, r) = range;
-        let max_range = self.max_range as isize;
-        if l > r || l > max_range {
-            T::identity()
-        } else if r > max_range - 1 {
-            self.query_index((l, max_range), 0 )
-        } else {
-            self.query_index(range, 0)
-        }
+        Self { values, updates, max_range: array_len, _op: Default::default() }
     }
 
     fn query_index(&mut self, (l, r): (isize, isize), index: usize) -> T {
@@ -71,7 +64,7 @@ impl<T, F> LazySegmentTree<T, F>
         else if l >= node_size || r < 0
         {
             //no overlap
-            T::identity()
+            Op::identity()
         }
         else
         {
@@ -84,19 +77,7 @@ impl<T, F> LazySegmentTree<T, F>
             let left = self.query_index((l, m), lchild(index));
             let right = self.query_index((0, r - (m + 1)), rchild(index));
             
-            T::op(&left, &right)
-        }
-    }
-
-    pub fn update(&mut self, range: (isize, isize), f: &F) {
-        let (l, r) = range;
-        let max_range = self.max_range as isize;
-        if l > r || l > max_range {
-            //no update
-        } else if r > max_range - 1 {
-            self.update_index((l, max_range), 0, f)
-        } else {
-            self.update_index(range, 0, f)
+            Op::op(&left, &right)
         }
     }
 
@@ -135,6 +116,36 @@ impl<T, F> LazySegmentTree<T, F>
             *rnode = F::compose(node, rnode);
         }
         *node = F::identity();
+    }
+}
+
+impl<T, Op, F> SegmentTree for LazySegmentTree<T, Op, F>
+    where T: Clone, Op: Default + Monoid<Data = T>, F: UpdateFunction<Data = T> + ComposableFunction + Monoid + Clone
+{
+    type Data = T;
+    type UpdateFn = F;
+
+    fn query(&mut self, (l, r): (isize, isize)) -> Self::Data {
+        let max_range = self.max_range as isize;
+        if l > r || l > max_range {
+            Op::identity()
+        } else if r > max_range - 1 {
+            self.query_index((l, max_range), 0 )
+        } else {
+            self.query_index((l, r), 0)
+        }
+    }
+
+    fn update(&mut self, (l, r): (isize, isize), f: Self::UpdateFn)
+    {
+        let max_range = self.max_range as isize;
+        if l > r || l > max_range {
+            //no update
+        } else if r > max_range - 1 {
+            self.update_index((l, max_range), 0, &f)
+        } else {
+            self.update_index((l, r), 0, &f)
+        }
     }
 }
 
