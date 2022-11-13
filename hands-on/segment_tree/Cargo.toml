@@ -1,0 +1,10 @@
+[package]
+name = "segment_tree"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "min_and_max"
+
+[[bin]]
+name = "queries_and_operations"

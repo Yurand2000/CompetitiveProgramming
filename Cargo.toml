@@ -1,6 +1,7 @@
 [workspace]
 members = [
 	"hands-on/sliding_window_maximum",
+	"hands-on/segment_tree",
 
 	"homework/leaders_in_array",
 	"homework/kadane_algorithm",
