@@ -30,8 +30,7 @@ impl<T, Op, F> LazySegmentTree<T, Op, F>
 
         //copy input array
         values.iter_mut().rev().zip(vec.into_iter().rev())
-            .map(|(vec, val)| { vec.data = val; })
-        .count();
+            .for_each(|(vec, val)| { vec.data = val; });
 
         //compute segment tree
         for i in (0..(tree_size-array_len)).rev()
@@ -54,12 +53,10 @@ impl<T, Op, F> LazySegmentTree<T, Op, F>
 
         if (l, r + 1) == (0, node_size) {
             //total overlap
-            let node = &mut self.values[index];
-            node.data = self.updates[index].apply(&node.data, node.size);
-
             self.propagate_update(index);
+            let new_value = self.apply_update(index);
 
-            self.values[index].data.clone()
+            new_value
         }
         else if l >= node_size || r < 0
         {
@@ -68,14 +65,16 @@ impl<T, Op, F> LazySegmentTree<T, Op, F>
         }
         else
         {
+            //partial overlap
             assert!(node_size > 1);
             
-            //partial overlap
             self.propagate_update(index);
+            self.apply_update(index);
 
-            let m = div_ceil(node_size, 2) - 1;
-            let left = self.query_index((l, m), lchild(index));
-            let right = self.query_index((0, r - (m + 1)), rchild(index));
+            //go recursively left and right
+            let (l_range, r_range) = self.get_child_ranges((l, r), index);
+            let left = self.query_index(l_range, lchild(index));
+            let right = self.query_index(r_range, rchild(index));
             
             Op::op(&left, &right)
         }
@@ -85,26 +84,51 @@ impl<T, Op, F> LazySegmentTree<T, Op, F>
         let node_size = self.values[index].size as isize;
         if (l, r + 1) == (0, node_size) {
             //total overlap
-            let node = &mut self.updates[index];
-            *node = F::compose(f, node);
+            self.compose_update(index, f);
+            self.propagate_update(index);
+            self.apply_update(index);
         }
         else if l >= node_size || r < 0
         {
             //no overlap
-            //no update
+            self.propagate_update(index);
+            self.apply_update(index);
         }
         else
-        {
-            assert!(node_size > 1);
-            
+        {            
             //partial overlap
-            let node = &mut self.values[index];
-            node.data = f.apply(&node.data, (r - l + 1).try_into().unwrap());
+            assert!(node_size > 1);
 
-            let m = div_ceil(node_size, 2) - 1;
-            self.update_index((l, m), lchild(index), f);
-            self.update_index((0, r - (m + 1)), rchild(index), f);
+            self.propagate_update(index);
+            self.reset_update(index);
+
+            //go recursively left and right
+            let (l_range, r_range) = self.get_child_ranges((l, r), index);
+            self.update_index(l_range, lchild(index), f);
+            self.update_index(r_range, rchild(index), f);
+            
+            self.update_from_children(index);
         }
+    }
+
+    fn compose_update(&mut self, index: usize, f: &F) {
+        let update_node = &mut self.updates[index];
+        *update_node = F::compose(f, update_node);
+    }
+
+    fn apply_update(&mut self, index: usize) -> T {
+        let update_node = &mut self.updates[index];
+        let value_node = &mut self.values[index];
+        let new_value = update_node.apply(&value_node.data, value_node.size);
+        *update_node = F::identity();
+        value_node.data = new_value.clone();
+
+        new_value
+    }
+
+    fn reset_update(&mut self, index: usize) {
+        let update_node = &mut self.updates[index];
+        *update_node = F::identity();
     }
 
     fn propagate_update(&mut self, index: usize) {        
@@ -115,7 +139,32 @@ impl<T, Op, F> LazySegmentTree<T, Op, F>
         if let Some(rnode) = rnode {
             *rnode = F::compose(node, rnode);
         }
-        *node = F::identity();
+    }
+
+    fn update_from_recursive(&mut self, index: usize, left: T, right: T) -> T
+    {
+        let new_value = Op::op(&left, &right);
+        let value_node = &mut self.values[index];
+        value_node.data = new_value.clone();
+
+        new_value
+    }
+
+    fn update_from_children(&mut self, index: usize)
+    {
+        self.update_from_recursive(
+            index,
+            self.values[lchild(index)].data.clone(),
+            self.values[rchild(index)].data.clone()
+        );
+    }
+
+    fn get_child_ranges(&self, (l, r): (isize, isize), index: usize) -> ( (isize, isize), (isize, isize) )
+    {
+        let m = div_ceil(self.values[index].size as isize, 2) - 1;
+        let left = (l, m);
+        let right = (0, r - (m + 1));
+        (left, right)
     }
 }
 
@@ -142,9 +191,9 @@ impl<T, Op, F> SegmentTree for LazySegmentTree<T, Op, F>
         if l > r || l > max_range {
             //no update
         } else if r > max_range - 1 {
-            self.update_index((l, max_range), 0, &f)
+            self.update_index((l, max_range), 0, &f);
         } else {
-            self.update_index((l, r), 0, &f)
+            self.update_index((l, r), 0, &f);
         }
     }
 }

@@ -13,14 +13,16 @@
 pub fn borrow_mut_node_and_children<T>(vec: &mut Vec<T>, index: usize)
     -> (&mut T, Option<&mut T>, Option<&mut T>)
 {
+    let len = vec.len();
     let (left, right) = vec.split_at_mut( index + 1 );
+    let left_len = left.len();
     let node = left.last_mut().unwrap();
 
     let (lnode, rnode) =
-    if lchild(index) + 1 > right.len() {
+    if lchild(index) >= len {
         (None, None)
     } else {
-        let (left, right) = right.split_at_mut( lchild(index) + 1 );
+        let (left, right) = right.split_at_mut( lchild(index) + 1 - left_len );
         (left.last_mut(), right.first_mut())
     };
 

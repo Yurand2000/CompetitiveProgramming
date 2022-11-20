@@ -13,6 +13,19 @@ fn test() {
     assert_eq!(tree.query( (0, 1) ), 30);
     assert_eq!(tree.query( (1, 2) ), 45);
     assert_eq!(tree.query( (0, 3) ), 80);
+
+    tree.update((0, 1), PlusFn(10));
+
+    assert_eq!(tree.query( (0, 1) ), 50);
+    assert_eq!(tree.query( (1, 2) ), 55);
+    assert_eq!(tree.query( (0, 3) ), 100);
+
+    tree.update((0, 1), PlusFn(5));
+    tree.update((1, 3), PlusFn(10));
+
+    assert_eq!(tree.query( (0, 1) ), 70);
+    assert_eq!(tree.query( (1, 2) ), 80);
+    assert_eq!(tree.query( (0, 3) ), 140);
 }
 
 #[derive(Debug, Default)]
