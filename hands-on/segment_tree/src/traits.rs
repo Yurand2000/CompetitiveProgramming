@@ -10,7 +10,7 @@ pub trait Semigroup: Sized
 {
     type Data: Clone;
 
-    /// The semigroup's associative binary operation.
+    /// The `Semigroup`'s associative binary operation.
     /// 
     /// Requires: `∀(a,b,c) ⇒ op(a, op(b, c)) = op(op(a, b), c)`
     fn op(left: &Self::Data, right: &Self::Data) -> Self::Data;
@@ -27,30 +27,67 @@ pub trait Semigroup: Sized
 /// that the compiler cannot enforce these properties.
 pub trait Monoid: Semigroup
 {
-    /// The monoid's identity element.
+    /// The `Monoid`'s identity element.
     /// 
     /// Requires: `∀a ⇒ op(a, identity()) = op(identity(), a) = a`
     fn identity() -> Self::Data;
 }
+
+/// The trait [`UpdateFunction`] specifies functions which are used to
+/// update segment trees. It performs an update for a specific
+/// range of elements on the segment tree, given the query value at that
+/// node and the size of the sub-tree (number of leafs).
+/// 
+/// If the segment tree is eager, the function is applied only to the
+/// leaves, and size will always be 1. The value of the inner nodes is
+/// computed using the combine operation on the tree's query operation.
+/// If the segment tree is lazy, the function may be applied to inner
+/// nodes too, or stored for later lazy updates when required.
+/// 
+/// Note that the provided operation must be distributive with the `op`
+/// operation provided by `Semigroup` and that this check cannot be
+/// enforced by the compiler.
 pub trait UpdateFunction {
     type Data: Clone;
 
+    /// The `UpdateFunction`'s application.
+    /// 
     /// Require ∀(f, a = (val_a, size_a), b = (val_b, size_b)) ⇒ apply(f, op(a, b), size_a + size_b) = op(apply(f, a, size_a), apply(f, b, size_b))
     fn apply(&self, a: &Self::Data, size: usize) -> Self::Data;
 }
 
+/// The trait [`ComposableFunction`] specifies how to compose two
+/// [`UpdateFunction`](UpdateFunction)s into a single update function.
+/// The definition is the same as that of a [`Semigroup`](Semigroup),
+/// by requiring also that the implementor type is an
+/// [`UpdateFunction`](UpdateFunction).
+/// 
+/// This functionality is exploited in lazy segment trees to combine
+/// multiple updates onto the same range into one single update, before
+/// propagating it to the leaves.
+/// 
+/// Note that the provided operation must be distributive with the `apply` operation
+/// provided by `UpdateFunction` and that this check cannot be enforced by the compiler.
 pub trait ComposableFunction: UpdateFunction + Semigroup<Data = Self> + Sized {
+    /// The `ComposableFunction`'s composition.
+    /// 
     /// Require ∀(f,g,a) ⇒ apply(compose(f, g), a) = apply(f, apply(g, a))
     fn compose(left: &Self, right: &Self) -> Self {
         Self::op(left, right)
     }
 }
 
+/// The trait [`Segment Tree`] specifies the functions and constraints a
+/// segment tree implementation must provide.
 pub trait SegmentTree {
     type Data: Clone;
     type UpdateFn: UpdateFunction<Data = Self::Data>;
     
+    /// Performs a query on the segment tree given a range.
     fn query(&mut self, range: (isize, isize)) -> Self::Data;
+
+    /// Performs an update on the segment tree given a range and
+    /// an update function.
     fn update(&mut self, range: (isize, isize), function: Self::UpdateFn);
 }
 

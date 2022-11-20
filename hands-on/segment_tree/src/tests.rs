@@ -1,4 +1,4 @@
-use crate::lazy_segment_tree::*;
+use crate::*;
 
 #[test]
 fn test() {
