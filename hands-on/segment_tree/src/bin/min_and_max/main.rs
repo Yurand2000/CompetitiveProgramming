@@ -12,19 +12,31 @@ pub enum Query {
 fn main() {
     let (array, queries) = read_input_from_stdin();
 
+    let query_res = min_and_max(array, queries);
+
+    for res in query_res.iter() {
+        println!("{}", res);
+    }
+}
+
+fn min_and_max(array: Vec<i32>, queries: Vec<Query>) -> Vec<i32>
+{
     let mut tree: LazySegmentTree<i32, Max, MinUpdate> =
         LazySegmentTree::new(array);
 
+    let mut query_res = Vec::new();
     for query in queries.iter()
     {
         match *query {
-            Query::Update(l, r, val) => tree.update((l-1, r-1), MinUpdate(val)),
+            Query::Update(l, r, val) =>
+                tree.update((l-1, r-1), MinUpdate(val)),
             Query::Max(l, r) => {
-                let value = tree.query((l-1, r-1));
-                println!("{}", value);
+                query_res.push( tree.query((l-1, r-1)) );
             },
         }
     }
+
+    query_res
 }
 
 #[derive(Default)]

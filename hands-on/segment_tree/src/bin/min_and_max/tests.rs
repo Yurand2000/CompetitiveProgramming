@@ -17,20 +17,7 @@ fn run_test(in_file: &str, out_file: &str)
     let (array, queries) = parse_input(in_file);
     let expected_output = parse_output(out_file);
 
-    let mut tree: LazySegmentTree<i32, Max, MinUpdate> =
-        LazySegmentTree::new(array);
-
-    let mut generated_output = Vec::with_capacity(queries.len());
-    for query in queries.iter()
-    {
-        match *query {
-            Query::Update(l, r, val) => tree.update((l-1, r-1), MinUpdate(val)),
-            Query::Max(l, r) => {
-                let value = tree.query((l-1, r-1));
-                generated_output.push(value);
-            },
-        }
-    }
+    let generated_output = min_and_max(array, queries);
 
     assert_eq!(expected_output, generated_output);
 }
