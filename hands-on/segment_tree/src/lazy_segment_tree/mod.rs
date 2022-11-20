@@ -29,23 +29,31 @@ impl<T, Op, F> LazySegmentTree<T, Op, F>
         let updates = vec![F::identity(); tree_size];
 
         //copy input array
-        values.iter_mut().rev().zip(vec.into_iter().rev())
+        let rotation = (1 << f32::log2(array_len as f32).ceil() as usize) - array_len;
+        let array_it = vec.into_iter().rev().cycle().skip(rotation);
+
+        values.iter_mut().skip(tree_size - array_len).rev().zip(array_it)
             .for_each(|(vec, val)| { vec.data = val; });
 
         //compute segment tree
-        for i in (0..(tree_size-array_len)).rev()
-        {
-            values[i].data = Op::op(
-                &values[ lchild(i) ].data,
-                &values[ rchild(i) ].data
-            );
-
-            values[i].size =
-                values[ lchild(i) ].size +
-                values[ rchild(i) ].size;
+        let mut tree = Self { values, updates, max_range: array_len, _op: Default::default() };
+        for i in (0..tree.values.len()).rev() {
+            tree.value_from_children(i);
         }
 
-        Self { values, updates, max_range: array_len, _op: Default::default() }
+        tree
+    }
+
+    fn value_from_children(&mut self, index: usize)
+    {
+        let (node, lnode, rnode) = borrow_mut_node_and_children(&mut self.values, index);
+        match (lnode, rnode) {
+            (Some(lnode), Some(rnode)) => {
+                node.data = Op::op(&lnode.data, &rnode.data);
+                node.size = lnode.size + rnode.size;
+            },
+            _ => {},
+        }
     }
 
     fn query_index(&mut self, (l, r): (isize, isize), index: usize) -> T {
@@ -131,7 +139,7 @@ impl<T, Op, F> LazySegmentTree<T, Op, F>
         *update_node = F::identity();
     }
 
-    fn propagate_update(&mut self, index: usize) {        
+    fn propagate_update(&mut self, index: usize) {
         let (node, lnode, rnode) = borrow_mut_node_and_children(&mut self.updates, index);
         if let Some(lnode) = lnode {
             *lnode = F::compose(node, lnode);
@@ -161,9 +169,9 @@ impl<T, Op, F> LazySegmentTree<T, Op, F>
 
     fn get_child_ranges(&self, (l, r): (isize, isize), index: usize) -> ( (isize, isize), (isize, isize) )
     {
-        let m = div_ceil(self.values[index].size as isize, 2) - 1;
-        let left = (l, m);
-        let right = (0, r - (m + 1));
+        let m = self.values[lchild(index)].size as isize - 1;
+        let left = (l, m.min(r));
+        let right = (0.max( l - (m + 1) ), r - (m + 1));
         (left, right)
     }
 }

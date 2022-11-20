@@ -3,6 +3,8 @@ pub use traits::*;
 
 mod utils;
 
-pub mod eager_segment_tree;
-pub mod lazy_segment_tree;
+mod eager_segment_tree;
+mod lazy_segment_tree;
+pub use eager_segment_tree::*;
+pub use lazy_segment_tree::*;
 
