@@ -34,7 +34,7 @@ struct SumI32;
 impl Semigroup for SumI32 {
     type Data = i32;
 
-    fn op(left: &Self::Data, right: &Self::Data) -> Self::Data { left + right }
+    fn combine(left: &Self::Data, right: &Self::Data) -> Self::Data { left + right }
 }
 
 impl Monoid for SumI32 {
@@ -55,7 +55,7 @@ impl UpdateFunction for PlusFn {
 impl Semigroup for PlusFn {
     type Data = Self;
 
-    fn op(left: &Self, right: &Self) -> Self {
+    fn combine(left: &Self, right: &Self) -> Self {
         Self(left.0 + right.0)
     }
 }

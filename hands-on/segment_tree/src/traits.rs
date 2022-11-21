@@ -13,7 +13,7 @@ pub trait Semigroup: Sized
     /// The `Semigroup`'s associative binary operation.
     /// 
     /// Requires: `∀(a,b,c) ⇒ op(a, op(b, c)) = op(op(a, b), c)`
-    fn op(left: &Self::Data, right: &Self::Data) -> Self::Data;
+    fn combine(left: &Self::Data, right: &Self::Data) -> Self::Data;
 }
 
 /// A [Monoid](https://en.wikipedia.org/wiki/Monoid) is a *set* with
@@ -73,7 +73,7 @@ pub trait ComposableFunction: UpdateFunction + Semigroup<Data = Self> + Sized {
     /// 
     /// Require ∀(f,g,a) ⇒ apply(compose(f, g), a) = apply(f, apply(g, a))
     fn compose(left: &Self, right: &Self) -> Self {
-        Self::op(left, right)
+        Self::combine(left, right)
     }
 }
 
@@ -96,10 +96,10 @@ pub trait SegmentTree {
 impl<T: Semigroup<Data = T> + Clone> Semigroup for Option<T>{
     type Data = Self;
 
-    fn op(left: &Self, right: &Self) -> Self
+    fn combine(left: &Self, right: &Self) -> Self
     {
         match (left, right) {
-            (Some(ref a), Some(ref b)) => Some(T::op(a, b)),
+            (Some(ref a), Some(ref b)) => Some(T::combine(a, b)),
             (None, _)                  => right.clone(),
             (_, None)                  => left.clone()
         }

@@ -45,7 +45,7 @@ struct Max;
 impl Semigroup for Max {
     type Data = i32;
 
-    fn op(left: &Self::Data, right: &Self::Data) -> Self::Data { *left.max(right) }
+    fn combine(left: &Self::Data, right: &Self::Data) -> Self::Data { *left.max(right) }
 }
 
 impl Monoid for Max {
@@ -66,7 +66,7 @@ impl UpdateFunction for MinUpdate {
 impl Semigroup for MinUpdate {
     type Data = Self;
 
-    fn op(left: &Self, right: &Self) -> Self {
+    fn combine(left: &Self, right: &Self) -> Self {
         MinUpdate( left.0.min(right.0) )
     }
 }

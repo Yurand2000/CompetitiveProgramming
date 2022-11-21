@@ -16,123 +16,135 @@ use utils::*;
 /// The segment tree implementation operates for both queries and updates in
 /// `Θ(log n)` time, where n is the number of leaves in the tree, and occupies
 /// `Θ(n)` space.
+#[derive(Debug)]
 pub struct LazySegmentTree<T, Op, F>
-    where T: Clone, Op: Default + Monoid<Data = T>,
-        F: UpdateFunction<Data = T> + ComposableFunction + Monoid
+    where T: Clone, Op: Monoid<Data = T>,
+        F: UpdateFunction<Data = T> + ComposableFunction + Monoid + Clone
 {
-    values: Vec< LazySegmentTreeNode<T> >,
+    values: Vec< TreeNode<T> >,
     updates: Vec< F >,
     max_range: usize,
     _op : PhantomData<Op>
 }
 
 impl<T, Op, F> LazySegmentTree<T, Op, F>
-    where T: Clone, Op: Default + Monoid<Data = T>, F: UpdateFunction<Data = T> + ComposableFunction + Monoid + Clone
+    where T: Clone, Op: Monoid<Data = T>, F: UpdateFunction<Data = T> + ComposableFunction + Monoid + Clone
 {
     /// Creates a new `LazySegmentTree` given a vector of initial values for the leaves. It initializes the
     /// segment tree using the [`Semigroup`](Semigroup)'s provided operation.
     pub fn new(vec: Vec<T>) -> Self {
-        let array_len = vec.len();
-        let tree_size = 2 * array_len - 1;
-        let mut values = vec![LazySegmentTreeNode { data: Op::identity(), size: 1 }; tree_size];
-        let updates = vec![F::identity(); tree_size];
+        let leafs_num = vec.len();
+        let tree_size = 2 * leafs_num - 1;
 
-        //copy input array
-        let rotation = (1 << f32::log2(array_len as f32).ceil() as usize) - array_len;
-        let array_it = vec.into_iter().rev().cycle().skip(rotation);
-
-        values.iter_mut().skip(tree_size - array_len).rev().zip(array_it)
-            .for_each(|(vec, val)| { vec.data = val; });
+        //initialize empty segment tree
+        let mut tree = Self{
+            values: vec![ TreeNode::identity::<Op>(); tree_size ],
+            updates: vec![ F::identity(); tree_size ],
+            max_range: leafs_num,
+            _op: Default::default()
+        };
 
         //compute segment tree
-        let mut tree = Self { values, updates, max_range: array_len, _op: Default::default() };
+        tree.initialize_leafs(vec);
         for i in (0..tree.values.len()).rev() {
-            tree.value_from_children(i);
+            tree.initialize_from_children(i);
         }
 
         tree
     }
 
-    fn value_from_children(&mut self, index: usize)
+    /// The leaves are copied into the segment tree.
+    fn initialize_leafs(&mut self, leafs: Vec<T>) {
+        let leafs_num = leafs.len();
+        let tree_size = self.values.len();
+
+        // the leafs must be copied from the leftmost to the rightmost
+        // indipendently of their height. For segment trees they will
+        // always be in the ending portion of the tree array, on the tree
+        // they will be in both the last and the one before it. The leaves
+        // array must be rotated by the number of leaves at the lowest level.
+        let rotation = (1 << f32::log2(leafs_num as f32).ceil() as usize) - leafs_num;
+        let array_it = leafs.into_iter().rev().cycle().skip(rotation);
+
+        self.values.iter_mut().skip(tree_size - leafs_num).rev().zip(array_it)
+            .for_each(|(vec, val)| { vec.data = val; });
+    }
+
+    /// Any inner node is initialized by combining the value of
+    /// its children. Its range will span on both the children nodes.
+    fn initialize_from_children(&mut self, index: usize)
     {
-        let (node, lnode, rnode) = borrow_mut_node_and_mut_children(&mut self.values, index);
-        match (lnode, rnode) {
-            (Some(lnode), Some(rnode)) => {
-                node.data = Op::op(&lnode.data, &rnode.data);
-                node.size = lnode.size + rnode.size;
-            },
-            _ => {},
+        let (node, l_child, r_child) = borrow_mut_node_and_mut_children(&mut self.values, index);
+        if let (Some(lnode), Some(rnode)) = (l_child, r_child)
+        {
+            node.data = Op::combine(&lnode.data, &rnode.data);
+            node.size = lnode.size + rnode.size;
         }
     }
 
-    fn query_index(&mut self, (l, r): (isize, isize), index: usize) -> T {
+    /// Query recursive function, must be started from the root node.
+    fn query_rec(&mut self, (l, r): (isize, isize), index: usize) -> T {
         let node_size = self.values[index].size as isize;
 
-        if (l, r + 1) == (0, node_size) {
-            //total overlap
-            self.propagate_update(index);
+        if total_overlap((l, r), node_size) {
+            self.propagate_update_to_children(index);
             let new_value = self.apply_update(index);
 
             new_value
         }
-        else if l >= node_size || r < 0
-        {
-            //no overlap
+        else if no_overlap((l, r), node_size) {
             Op::identity()
         }
-        else
-        {
-            //partial overlap
-            assert!(node_size > 1);
+        else /*partial overlap*/ {
+            assert!(node_size > 1); //cannot have partial overlaps when the node has size 1.
             
-            self.propagate_update(index);
+            self.propagate_update_to_children(index);
             self.apply_update(index);
 
             //go recursively left and right
             let (l_range, r_range) = self.get_child_ranges((l, r), index);
-            let left = self.query_index(l_range, lchild(index));
-            let right = self.query_index(r_range, rchild(index));
+            let left = self.query_rec(l_range, l_child(index));
+            let right = self.query_rec(r_range, r_child(index));
             
-            Op::op(&left, &right)
+            Op::combine(&left, &right)
         }
     }
 
-    fn update_index(&mut self, (l, r): (isize, isize), index: usize, f: &F) {
+    /// Update recursive function, must be started from the root node.
+    fn update_rec(&mut self, (l, r): (isize, isize), index: usize, f: &F) {
         let node_size = self.values[index].size as isize;
-        if (l, r + 1) == (0, node_size) {
-            //total overlap
+        if total_overlap((l, r), node_size) {
             self.compose_update(index, f);
-            self.propagate_update(index);
+            self.propagate_update_to_children(index);
             self.apply_update(index);
         }
-        else if l >= node_size || r < 0
-        {
-            //no overlap
-            self.propagate_update(index);
+        else if no_overlap((l, r), node_size) {
+            self.propagate_update_to_children(index);
             self.apply_update(index);
         }
-        else
-        {            
-            //partial overlap
-            assert!(node_size > 1);
+        else /*partial overlap*/ {
+            assert!(node_size > 1); //cannot have partial overlaps when the node has size 1.
 
-            self.propagate_update(index);
+            self.propagate_update_to_children(index);
             self.reset_update(index);
 
             //go recursively left and right
             let (l_range, r_range) = self.get_child_ranges((l, r), index);
-            self.update_index(l_range, lchild(index), f);
-            self.update_index(r_range, rchild(index), f);
+            self.update_rec(l_range, l_child(index), f);
+            self.update_rec(r_range, r_child(index), f);
             
             self.update_from_children(index);
         }
     }
 
+    /// Compose the given update function to the one for the node given its index.
     fn compose_update(&mut self, index: usize, f: &F) {
         let update_node = &mut self.updates[index];
         *update_node = F::compose(f, update_node);
     }
 
+    /// Apply any pending update and reset it to the identity.
+    /// Return the newly computed value.
     fn apply_update(&mut self, index: usize) -> T {
         let update_node = &mut self.updates[index];
         let value_node = &mut self.values[index];
@@ -143,12 +155,14 @@ impl<T, Op, F> LazySegmentTree<T, Op, F>
         new_value
     }
 
+    /// Set the update for the node to the identity.
     fn reset_update(&mut self, index: usize) {
         let update_node = &mut self.updates[index];
         *update_node = F::identity();
     }
 
-    fn propagate_update(&mut self, index: usize) {
+    /// Propagate any pending update to the children nodes.
+    fn propagate_update_to_children(&mut self, index: usize) {
         let (node, lnode, rnode) = borrow_mut_node_and_mut_children(&mut self.updates, index);
         if let Some(lnode) = lnode {
             *lnode = F::compose(node, lnode);
@@ -158,27 +172,22 @@ impl<T, Op, F> LazySegmentTree<T, Op, F>
         }
     }
 
-    fn update_from_recursive(&mut self, index: usize, left: T, right: T) -> T
-    {
-        let new_value = Op::op(&left, &right);
-        let value_node = &mut self.values[index];
-        value_node.data = new_value.clone();
-
-        new_value
-    }
-
+    /// Updates the value of an inner node by combining
+    /// the answers of its children.
     fn update_from_children(&mut self, index: usize)
     {
-        self.update_from_recursive(
-            index,
-            self.values[lchild(index)].data.clone(),
-            self.values[rchild(index)].data.clone()
-        );
+        let left = &self.values[l_child(index)].data;
+        let right = &self.values[r_child(index)].data;
+        let new_value = Op::combine(left, right);
+        let value_node = &mut self.values[index];
+        value_node.data = new_value.clone();
     }
 
+    /// Given an inner node and a range, compute the two
+    /// sub-ranges for the node's children.
     fn get_child_ranges(&self, (l, r): (isize, isize), index: usize) -> ( (isize, isize), (isize, isize) )
     {
-        let m = self.values[lchild(index)].size as isize - 1;
+        let m = self.values[l_child(index)].size as isize - 1;
         let left = (l, m.min(r));
         let right = (0.max( l - (m + 1) ), r - (m + 1));
         (left, right)
@@ -186,7 +195,7 @@ impl<T, Op, F> LazySegmentTree<T, Op, F>
 }
 
 impl<T, Op, F> SegmentTree for LazySegmentTree<T, Op, F>
-    where T: Clone, Op: Default + Monoid<Data = T>, F: UpdateFunction<Data = T> + ComposableFunction + Monoid + Clone
+    where T: Clone, Op: Monoid<Data = T>, F: UpdateFunction<Data = T> + ComposableFunction + Monoid + Clone
 {
     type Data = T;
     type UpdateFn = F;
@@ -196,13 +205,10 @@ impl<T, Op, F> SegmentTree for LazySegmentTree<T, Op, F>
     /// It performs in `Θ(log n)` time, where n is the number of leafs of the tree.
     fn query(&mut self, (l, r): (isize, isize)) -> Self::Data {
         let max_range = self.max_range as isize;
-        if l > r || l > max_range {
-            Op::identity()
-        } else if r > max_range - 1 {
-            self.query_index((l, max_range), 0 )
-        } else {
-            self.query_index((l, r), 0)
-        }
+        self.query_rec(
+            ( l.max(0), r.min(max_range) ),
+            0 //root index
+        )
     }
 
     /// Performs an update on the given segment tree given a range and an update function.
@@ -212,20 +218,28 @@ impl<T, Op, F> SegmentTree for LazySegmentTree<T, Op, F>
     fn update(&mut self, (l, r): (isize, isize), f: Self::UpdateFn)
     {
         let max_range = self.max_range as isize;
-        if l > r || l > max_range {
-            //no update
-        } else if r > max_range - 1 {
-            self.update_index((l, max_range), 0, &f);
-        } else {
-            self.update_index((l, r), 0, &f);
-        }
+        self.update_rec(
+            ( l.max(0), r.min(max_range) ),
+            0, //root index
+            &f
+        )
     }
 }
 
+/// Each node of the segment tree contains
+/// the data stored in the node and the number
+/// of elements the sub-tree contains.
 #[derive(Debug, Clone)]
-struct LazySegmentTreeNode<T> {
+struct TreeNode<T> {
     data: T,
     size: usize
+}
+
+impl<T> TreeNode<T> {
+    fn identity<Op>() -> Self
+        where Op: Monoid<Data = T> {
+        Self{ data: Op::identity(), size: 1 }
+    }
 }
 
 #[cfg(test)]

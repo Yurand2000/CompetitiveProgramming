@@ -59,7 +59,7 @@ struct Any;
 impl Semigroup for Any {
     type Data = i32;
 
-    fn op(left: &Self::Data, right: &Self::Data) -> Self::Data { if *left == 0 { *right } else { *left } }
+    fn combine(left: &Self::Data, right: &Self::Data) -> Self::Data { if *left == 0 { *right } else { *left } }
 }
 
 impl Monoid for Any {
@@ -80,7 +80,7 @@ impl UpdateFunction for Add {
 impl Semigroup for Add {
     type Data = Self;
 
-    fn op(left: &Self, right: &Self) -> Self {
+    fn combine(left: &Self, right: &Self) -> Self {
         Add( left.0 + right.0 )
     }
 }
