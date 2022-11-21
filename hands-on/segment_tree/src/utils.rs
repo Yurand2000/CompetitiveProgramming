@@ -2,6 +2,8 @@
 #[inline(always)] pub fn r_child(node: usize) -> usize { (2 * node) + 2 }
 
 #[inline(always)]
+/// Borrows mutably a node and its children by borrowing
+/// indipendent sub-slices of the input vector.
 pub fn borrow_mut_node_and_mut_children<T>(vec: &mut Vec<T>, index: usize)
     -> (&mut T, Option<&mut T>, Option<&mut T>)
 {

@@ -1,11 +1,15 @@
-use segment_tree::*;
-
 mod input_parse;
 use input_parse::*;
 
-#[derive(Debug, Clone)]
-pub struct Operation(usize, usize, i32);
-pub struct Query(isize, isize);
+pub struct Operation{
+    left: usize,
+    right: usize,
+    value: i32
+}
+pub struct Query{
+    left: usize,
+    right: usize
+}
 
 fn main() {
     let (array, operations, queries) = read_input_from_stdin();
@@ -13,85 +17,114 @@ fn main() {
     let result = queries_of_operations(array, operations, queries);
 
     print!("{}", result[0]);
-    for i in 1..result.len() {
-        print!(" {}", result[i]);
+    for item in result.iter().skip(1) {
+        print!(" {}", item);
     }
 }
 
 fn queries_of_operations(array: Vec<i32>, operations: Vec<Operation>, queries: Vec<Query>) -> Vec<i32>
 {
-    let mut tree: LazySegmentTree<i32, Any, Add> =
-        LazySegmentTree::new(vec![Any::identity(); operations.len()]);
+    let operation_occurrencies =
+        compute_ops_occurrencies(operations.len(), queries);
+
+    compute_ops_executions(array, operations, operation_occurrencies)
+}
+
+/// Computes how many times each update operation must be performed
+/// given the set of queries.
+/// 
+/// Given that update queries add the value 1 to a range of values,
+/// it is possible to use the prefix sum inverse of the array of
+/// operation occurrencies to perform this update in constant time
+/// for each query.
+/// 
+/// This function performs in `Θ(m + k)`, where there are `k` queries
+/// and `m` operations, because the operation array must be computed
+/// from its inverted prefix sum and the queries must be performed.
+fn compute_ops_occurrencies(operation_count: usize, queries: Vec<Query>) -> Vec<i32> {
+    let mut ops_psum = vec![0; operation_count];
 
     for query in queries.iter() {
-        tree.update( (query.0 - 1, query.1 - 1), Add(1) );
+        let range = (query.left - 1, query.right - 1);
+        prefix_sum_add_to_range(&mut ops_psum, range, 1);
     }
 
-    let mut prefix_sum_inverse = vec![0; array.len()];
+    array_to_prefix_sum(&ops_psum)
+}
+
+/// Given an array and a number of update operations with their occurrence,
+/// the final array after all the updates is computed.
+/// 
+/// Since the operations perform a range update of values, it is possible
+/// to exploit the prefix sum inverse of the array of values to perform
+/// each update in constant time.
+/// 
+/// This function performs in `Θ(m + n)`, where there are `m` operations and
+/// `n` values, because the values array must be computed from its inverted
+/// prefix sum and the operations updates must be performed.
+fn compute_ops_executions(array: Vec<i32>, operations: Vec<Operation>, ops_occurrencies: Vec<i32>) -> Vec<i32> {
+    let mut psum = array_from_prefix_sum(&array);
+
+    for (operation, occurrencies) in operations.iter().zip(ops_occurrencies.iter())
+    {
+        let range = (operation.left - 1, operation.right - 1);
+        let value = operation.value * occurrencies;
+
+        prefix_sum_add_to_range(&mut psum, range, value);
+    }
+
+    array_to_prefix_sum(&psum)
+}
+
+/// Computes the prefix sum array of the given vector.
+/// 
+/// This is the inverse function of
+/// [`array_from_prefix_sum`](array_from_prefix_sum)
+fn array_to_prefix_sum(input: &Vec<i32>) -> Vec<i32>
+{
+    let mut output = Vec::with_capacity(input.len());
+
     let mut prec = 0;
-    for (&elem, prefix_elem) in array.iter().zip(prefix_sum_inverse.iter_mut()) {
-        *prefix_elem = elem - prec;
+    for &elem in input.iter() {
+        prec += elem;
+        output.push(prec);
+    }
+
+    output
+}
+
+/// Computed the array from the given prefix sum vector.
+/// Equally, given an array of values, produces a vector
+/// of which its prefix sum is the starting vector.
+/// 
+/// This is the inverse function of
+/// [`array_to_prefix_sum`](array_to_prefix_sum)
+fn array_from_prefix_sum(input: &Vec<i32>) -> Vec<i32>
+{
+    let mut output = Vec::with_capacity(input.len());
+
+    let mut prec = 0;
+    for &elem in input.iter() {
+        output.push(elem - prec);
         prec = elem;
     }
 
-    for op in 0..operations.len() {
-        let op_count = tree.query((op as isize, op as isize));
-        let mut op = operations[op].clone();
-        op.2 = op.2 * op_count;
+    output
+}
 
-        if let Some(cell) = prefix_sum_inverse.get_mut(op.0 - 1) { *cell += op.2; }
-        if let Some(cell) = prefix_sum_inverse.get_mut(op.1) { *cell -= op.2; }
+/// Performs an update on a prefix sum inverse array, on which
+/// each value update on a cell propagates to the rest of the array
+/// when computing the prefix sum.
+fn prefix_sum_add_to_range(vec: &mut [i32], (l, r): (usize, usize), value: i32)
+{
+    if let Some(cell) = vec.get_mut(l) {
+        *cell += value;
     }
 
-    let mut array = vec![0; prefix_sum_inverse.len()];
-    let mut prec = 0;
-    for i in 0..prefix_sum_inverse.len() {
-        array[i] = prefix_sum_inverse[i] + prec;
-        prec = array[i];
-    }
-
-    array
-}
-
-#[derive(Default)]
-struct Any;
-
-impl Semigroup for Any {
-    type Data = i32;
-
-    fn combine(left: &Self::Data, right: &Self::Data) -> Self::Data { if *left == 0 { *right } else { *left } }
-}
-
-impl Monoid for Any {
-    fn identity() -> Self::Data { 0 }
-}
-
-#[derive(Clone)]
-struct Add(i32);
-
-impl UpdateFunction for Add {
-    type Data = i32;
-
-    fn apply(&self, a: &Self::Data, _size: usize) -> Self::Data {
-        a + self.0
+    if let Some(cell) = vec.get_mut(r + 1) {
+        *cell -= value;
     }
 }
-
-impl Semigroup for Add {
-    type Data = Self;
-
-    fn combine(left: &Self, right: &Self) -> Self {
-        Add( left.0 + right.0 )
-    }
-}
-
-impl Monoid for Add {
-    fn identity() -> Self::Data {
-        Self(0)
-    }
-}
-
-impl ComposableFunction for Add { }
 
 #[cfg(test)]
 mod tests;

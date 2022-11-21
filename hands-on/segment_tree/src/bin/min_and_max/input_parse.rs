@@ -8,7 +8,7 @@ pub fn read_input_from_stdin() -> (Vec<i32>, Vec<Query>) {
     read_input(&mut lines)
 }
 
-pub fn read_input<'a, T>(input: &mut T) -> (Vec<i32>, Vec<Query>)
+pub fn read_input<T>(input: &mut T) -> (Vec<i32>, Vec<Query>)
     where T: Iterator<Item = String>
 {
     let (size, queries) = read_size_from_io(input);
@@ -18,24 +18,24 @@ pub fn read_input<'a, T>(input: &mut T) -> (Vec<i32>, Vec<Query>)
     (array, queries)
 }
 
-fn read_size_from_io<'a, T>(input: &mut T) -> (usize, usize)
+fn read_size_from_io<T>(input: &mut T) -> (usize, usize)
     where T: Iterator<Item = String>
 {
     let sizes_str = input.next().unwrap();
 
-    let mut sizes_str = sizes_str.trim().split_ascii_whitespace();
+    let mut sizes_str = sizes_str.split_whitespace();
     let size = sizes_str.next().unwrap().parse().unwrap();
     let queries = sizes_str.next().unwrap().parse().unwrap();
 
     (size, queries)
 }
 
-fn read_array_from_io<'a, T>(input: &mut T, size: usize) -> Vec<i32>
+fn read_array_from_io<T>(input: &mut T, size: usize) -> Vec<i32>
     where T: Iterator<Item = String>
 {
     let array_str = input.next().unwrap();
 
-    let mut array_str = array_str.trim().split_ascii_whitespace();
+    let mut array_str = array_str.split_whitespace();
     let mut array = Vec::with_capacity(size);
     for _ in 0..size {
         array.push(array_str.next().unwrap().parse().unwrap());
@@ -44,7 +44,7 @@ fn read_array_from_io<'a, T>(input: &mut T, size: usize) -> Vec<i32>
     array
 }
 
-fn read_queries_from_io<'a, T>(input: &mut T, queries: usize) -> Vec<Query>
+fn read_queries_from_io<T>(input: &mut T, queries: usize) -> Vec<Query>
     where T: Iterator<Item = String>
 {
     let mut queries_vec = Vec::with_capacity(queries);
@@ -52,7 +52,7 @@ fn read_queries_from_io<'a, T>(input: &mut T, queries: usize) -> Vec<Query>
     for _ in 0..queries
     {
         let query_str = input.next().unwrap();
-        let mut query_reader = query_str.trim().split_ascii_whitespace();
+        let mut query_reader = query_str.split_whitespace();
 
         match query_reader.next().unwrap().parse().unwrap() {
             0 => {

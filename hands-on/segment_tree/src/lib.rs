@@ -180,7 +180,7 @@ impl<T, Op, F> LazySegmentTree<T, Op, F>
         let right = &self.values[r_child(index)].data;
         let new_value = Op::combine(left, right);
         let value_node = &mut self.values[index];
-        value_node.data = new_value.clone();
+        value_node.data = new_value;
     }
 
     /// Given an inner node and a range, compute the two

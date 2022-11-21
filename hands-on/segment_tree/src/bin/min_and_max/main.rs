@@ -24,21 +24,26 @@ fn min_and_max(array: Vec<i32>, queries: Vec<Query>) -> Vec<i32>
     let mut tree: LazySegmentTree<i32, Max, MinUpdate> =
         LazySegmentTree::new(array);
 
-    let mut query_res = Vec::new();
+    let mut query_results = Vec::new();
     for query in queries.iter()
     {
         match *query {
-            Query::Update(l, r, val) =>
-                tree.update((l-1, r-1), MinUpdate(val)),
+            Query::Update(l, r, val) => {
+                let range = (l-1, r-1);
+                tree.update(range, MinUpdate(val));
+            },
             Query::Max(l, r) => {
-                query_res.push( tree.query((l-1, r-1)) );
+                let range = (l-1, r-1);
+                query_results.push( tree.query(range) );
             },
         }
     }
 
-    query_res
+    query_results
 }
 
+/// Defines the operation that is performed when combining
+/// two query ranges on the segment tree.
 #[derive(Default)]
 struct Max;
 
@@ -52,6 +57,8 @@ impl Monoid for Max {
     fn identity() -> Self::Data { i32::MIN }
 }
 
+/// Defines the operation that is performed when updating
+/// a range on the segment tree.
 #[derive(Clone)]
 struct MinUpdate(i32);
 
