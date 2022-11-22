@@ -20,6 +20,7 @@ fn main() {
     for item in result.iter().skip(1) {
         print!(" {}", item);
     }
+    print!("\n");
 }
 
 fn queries_of_operations(array: Vec<i32>, operations: Vec<Operation>, queries: Vec<Query>) -> Vec<i32>
@@ -35,8 +36,8 @@ fn queries_of_operations(array: Vec<i32>, operations: Vec<Operation>, queries: V
 /// 
 /// Given that update queries add the value 1 to a range of values,
 /// it is possible to use the prefix sum inverse of the array of
-/// operation occurrencies to perform this update in constant time
-/// for each query.
+/// operation occurrencies, also known as difference array, to perform
+/// this update in constant time for each query.
 /// 
 /// This function performs in `Θ(m + k)`, where there are `k` queries
 /// and `m` operations, because the operation array must be computed
@@ -56,8 +57,8 @@ fn compute_ops_occurrencies(operation_count: usize, queries: Vec<Query>) -> Vec<
 /// the final array after all the updates is computed.
 /// 
 /// Since the operations perform a range update of values, it is possible
-/// to exploit the prefix sum inverse of the array of values to perform
-/// each update in constant time.
+/// to exploit the prefix sum inverse of the array, also known as
+/// difference array, of values to perform each update in constant time.
 /// 
 /// This function performs in `Θ(m + n)`, where there are `m` operations and
 /// `n` values, because the values array must be computed from its inverted
@@ -93,7 +94,7 @@ fn array_to_prefix_sum(input: &Vec<i32>) -> Vec<i32>
     output
 }
 
-/// Computed the array from the given prefix sum vector.
+/// Computes the difference array from the given vector.
 /// Equally, given an array of values, produces a vector
 /// of which its prefix sum is the starting vector.
 /// 
@@ -112,9 +113,9 @@ fn array_from_prefix_sum(input: &Vec<i32>) -> Vec<i32>
     output
 }
 
-/// Performs an update on a prefix sum inverse array, on which
+/// Performs a range sum update on a difference array, on which
 /// each value update on a cell propagates to the rest of the array
-/// when computing the prefix sum.
+/// when computing its prefix sum.
 fn prefix_sum_add_to_range(vec: &mut [i32], (l, r): (usize, usize), value: i32)
 {
     if let Some(cell) = vec.get_mut(l) {

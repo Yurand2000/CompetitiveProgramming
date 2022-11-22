@@ -21,7 +21,7 @@ fn main() {
 
 fn min_and_max(array: Vec<i32>, queries: Vec<Query>) -> Vec<i32>
 {
-    let mut tree: LazySegmentTree<i32, Max, MinUpdate> =
+    let mut tree: LazySegmentTree<i32, Max, Option<MinUpdate>> =
         LazySegmentTree::new(array);
 
     let mut query_results = Vec::new();
@@ -30,7 +30,7 @@ fn min_and_max(array: Vec<i32>, queries: Vec<Query>) -> Vec<i32>
         match *query {
             Query::Update(l, r, val) => {
                 let range = (l-1, r-1);
-                tree.update(range, MinUpdate(val));
+                tree.update(range, Some(MinUpdate(val)));
             },
             Query::Max(l, r) => {
                 let range = (l-1, r-1);
@@ -75,12 +75,6 @@ impl Semigroup for MinUpdate {
 
     fn combine(left: &Self, right: &Self) -> Self {
         MinUpdate( left.0.min(right.0) )
-    }
-}
-
-impl Monoid for MinUpdate {
-    fn identity() -> Self::Data {
-        Self(i32::MAX)
     }
 }
 

@@ -7,4 +7,4 @@ edition = "2021"
 name = "min_and_max"
 
 [[bin]]
-name = "queries_and_operations"
+name = "queries_of_operations"

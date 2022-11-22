@@ -1,9 +1,28 @@
 # Hands-on #02: Segment tree
+
+The provided crate produces both executables for the **min and max** problem and the **queries of operations** problem. To build and run the executables, open a terminal at the same location of this README file which has the cargo tool available, and run:
+
+- `cargo run --bin min_and_max`
+- `cargo run --bin queries_of_operations`
+
+To run the tests, files can be passed using:
+
+- `cargo run --bin NAME_OF_THE_PROBLEM < input_file.txt | diff - output_file.txt`
+
+As an example:
+
+- `cargo run --bin min_and_max < ./src/bin/min_and_max/tests/input0.txt | diff - ./src/bin/min_and_max/tests/output0.txt`
+
+Additionally calling `cargo test` runs these same tests included in these folders, which are included into the test source files.
+
+To *"install"* the generated executables to the current directory, run the command `cargo install --root . --path .` which will copy the generated executables in the `./bin/` folder.
+
+# Hands-on Description
 In this hands-on, we are going to solve two problems with segment trees.
 For each problem, we have a pdf with the description of the problem and a set of tests to check the correctness of your implementations.
 
-- Problem *Min and Max*: [Text](./problem_01/text.pdf) and [TestSet.zip](./problem_01/Testset.zip)
-- Problem *Queries and Opearations*: [Text](./problem_02/text.pdf) and [TestSet.zip](./problem_02/Testset.zip)
+- Problem *Min and Max*: [Text](https://github.com/rossanoventurini/CompetitiveProgramming/blob/master/handson/handson02/problem_01/text.pdf) and [TestSet.zip](https://github.com/rossanoventurini/CompetitiveProgramming/blob/master/handson/handson02/problem_01/Testset.zip)
+- Problem *Queries and Opearations*: [Text](https://github.com/rossanoventurini/CompetitiveProgramming/blob/master/handson/handson02/problem_02/text.pdf) and [TestSet.zip](https://github.com/rossanoventurini/CompetitiveProgramming/blob/master/handson/handson02/problem_02/TestSet.zip)
 
 ## Submission
 Submit 

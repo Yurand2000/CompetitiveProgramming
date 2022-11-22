@@ -1,10 +1,7 @@
 use std::marker::PhantomData;
 
 pub mod traits;
-mod utils;
-
 pub use traits::*;
-use utils::*;
 
 /// Lazy Segment Tree implementation.
 /// 
@@ -23,7 +20,6 @@ pub struct LazySegmentTree<T, Op, F>
 {
     values: Vec< TreeNode<T> >,
     updates: Vec< F >,
-    max_range: usize,
     _op : PhantomData<Op>
 }
 
@@ -40,7 +36,6 @@ impl<T, Op, F> LazySegmentTree<T, Op, F>
         let mut tree = Self{
             values: vec![ TreeNode::identity::<Op>(); tree_size ],
             updates: vec![ F::identity(); tree_size ],
-            max_range: leafs_num,
             _op: Default::default()
         };
 
@@ -96,7 +91,7 @@ impl<T, Op, F> LazySegmentTree<T, Op, F>
             Op::identity()
         }
         else /*partial overlap*/ {
-            assert!(node_size > 1); //cannot have partial overlaps when the node has size 1.
+            assert!(node_size > 1); //cannot have partial overlaps when the node has size greater than 1.
             
             self.propagate_update_to_children(index);
             self.apply_update(index);
@@ -123,7 +118,7 @@ impl<T, Op, F> LazySegmentTree<T, Op, F>
             self.apply_update(index);
         }
         else /*partial overlap*/ {
-            assert!(node_size > 1); //cannot have partial overlaps when the node has size 1.
+            assert!(node_size > 1); //cannot have partial overlaps when the node has size greater than 1.
 
             self.propagate_update_to_children(index);
             self.reset_update(index);
@@ -192,6 +187,9 @@ impl<T, Op, F> LazySegmentTree<T, Op, F>
         let right = (0.max( l - (m + 1) ), r - (m + 1));
         (left, right)
     }
+
+    #[inline(always)]
+    fn root_index(&self) -> usize { 0 }
 }
 
 impl<T, Op, F> SegmentTree for LazySegmentTree<T, Op, F>
@@ -203,11 +201,10 @@ impl<T, Op, F> SegmentTree for LazySegmentTree<T, Op, F>
     /// Performs a query on the given segment tree given a range.
     /// 
     /// It performs in `Θ(log n)` time, where n is the number of leafs of the tree.
-    fn query(&mut self, (l, r): (isize, isize)) -> Self::Data {
-        let max_range = self.max_range as isize;
+    fn query(&mut self, range: (isize, isize)) -> Self::Data {
         self.query_rec(
-            ( l.max(0), r.min(max_range) ),
-            0 //root index
+            range,
+            self.root_index(),
         )
     }
 
@@ -215,13 +212,11 @@ impl<T, Op, F> SegmentTree for LazySegmentTree<T, Op, F>
     /// This operation is performed lazily, and updates are performed only when needed.
     /// 
     /// It performs in `Θ(log n)` time, where n is the number of leafs of the tree.
-    fn update(&mut self, (l, r): (isize, isize), f: Self::UpdateFn)
-    {
-        let max_range = self.max_range as isize;
+    fn update(&mut self, range: (isize, isize), update_fn: Self::UpdateFn) {
         self.update_rec(
-            ( l.max(0), r.min(max_range) ),
-            0, //root index
-            &f
+            range,
+            self.root_index(),
+            &update_fn
         )
     }
 }
@@ -241,6 +236,34 @@ impl<T> TreeNode<T> {
         Self{ data: Op::identity(), size: 1 }
     }
 }
+
+#[inline(always)] pub fn l_child(node: usize) -> usize { (2 * node) + 1 }
+#[inline(always)] pub fn r_child(node: usize) -> usize { (2 * node) + 2 }
+
+/// Borrows mutably a node and its children by borrowing
+/// indipendent sub-slices of the input vector.
+#[inline(always)]
+pub fn borrow_mut_node_and_mut_children<T>(vec: &mut Vec<T>, index: usize)
+    -> (&mut T, Option<&mut T>, Option<&mut T>)
+{
+    let len = vec.len();
+    let (left, right) = vec.split_at_mut( index + 1 );
+    let left_len = left.len();
+    let node = left.last_mut().unwrap();
+
+    let (lnode, rnode) =
+    if l_child(index) >= len {
+        (None, None)
+    } else {
+        let (left, right) = right.split_at_mut( l_child(index) + 1 - left_len );
+        (left.last_mut(), right.first_mut())
+    };
+
+    (node, lnode, rnode)
+}
+
+#[inline(always)] pub fn total_overlap((l, r): (isize, isize), node_size: isize) -> bool { (l, r + 1) == (0, node_size) }
+#[inline(always)] pub fn no_overlap((l, r): (isize, isize), node_size: isize) -> bool { l >= node_size || r < 0 }
 
 #[cfg(test)]
 mod tests;
