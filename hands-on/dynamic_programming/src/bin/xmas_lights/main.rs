@@ -1,4 +1,5 @@
 mod input_parse;
+mod bruteforce;
 
 #[derive(Clone, PartialEq, Eq)]
 pub enum XmasLight {
@@ -10,103 +11,60 @@ pub enum XmasLight {
 
 fn main()
 {
-    let input = include_str!("./tests/input1.txt");
-    let input_lines = &mut input.lines().map(|line| String::from(line));
-    let lights = input_parse::read_input(input_lines);
+    let lights = input_parse::read_input_from_stdin();
 
-    let (red, white, green) = solve(lights);
-    println!("{} {} {}", red, white, green);
+    let (_red, _rw_combs, rwg_combs) = solve(lights);
+    println!("{}", rwg_combs);
 }
 
 fn solve(lights: Vec<XmasLight>) -> (i32, i32, i32)
 {
-    let (mut red, mut white, mut green, mut k) = (0, 0, 0, 1);
+    let (mut red, mut rw_combs, mut rwg_combs, mut k) = (0, 0, 0, 1);
     for light in lights.iter() {
         match light {
             XmasLight::Red => {
                 red += 1;
             },
             XmasLight::White => {
-                white += red;
+                rw_combs += red;
             },
             XmasLight::Green => {
-                green += white;
+                rwg_combs += rw_combs;
             }
             XmasLight::Unknown => {
-                let (curr_red, curr_white, curr_green) = (red, white, green);
+                let (curr_red, curr_rw_combs, curr_rwg_combs) = (red, rw_combs, rwg_combs);
                 red = 3 * curr_red + k;
-                white = 3 * curr_white + curr_red;
-                green = 3 * curr_green + curr_white;
+                rw_combs = 3 * curr_rw_combs + curr_red;
+                rwg_combs = 3 * curr_rwg_combs + curr_rw_combs;
                 k = 3 * k;
             }
         }
     }
 
-    (red, white, green)
-}
-
-fn bruteforce_solve(lights: Vec<XmasLight>) -> (i32, i32, i32)
-{
-    let (mut red, mut white, mut green) = (0, 0, 0);
-
-    let mut no_unknown = lights.clone();
-    let mut unknowns = 0;
-    for light in no_unknown.iter_mut() {
-        if *light == XmasLight::Unknown {
-            *light = XmasLight::Red;
-            unknowns += 1;
-        } 
-    }
-
-    let combinations = 3u32.pow(unknowns);
-    for i in 0..combinations {
-        let mut modulus = i;
-        let mut k = unknowns as i32 - 1;
-        for (index, light) in lights.iter().enumerate() {
-            if *light == XmasLight::Unknown {
-                let color = modulus / 3u32.pow(k as u32);
-                modulus = modulus % 3u32.pow(k as u32);
-                k -= 1;
-    
-                match color {
-                    0 => no_unknown[index] = XmasLight::Red,
-                    1 => no_unknown[index] = XmasLight::White,
-                    2 => no_unknown[index] = XmasLight::Green, 
-                    v => panic!("{v}"),
-                }
-            }
-        }
-
-        let (new_red, new_white, new_green) = solve_simple(&no_unknown);
-        red += new_red;
-        white += new_white;
-        green += new_green;
-    }
-
-    (red, white, green)
+    (red, rw_combs, rwg_combs)
 }
 
 fn solve_simple(lights: &Vec<XmasLight>) -> (i32, i32, i32)
 {
-    let (mut red, mut white, mut green) = (0, 0, 0);
+    let (mut red, mut rw_combs, mut rwg_combs) = (0, 0, 0);
     for light in lights.iter() {
         match light {
             XmasLight::Red => {
                 red += 1;
             },
             XmasLight::White => {
-                white += red;
+                rw_combs += red;
             },
             XmasLight::Green => {
-                green += white;
+                rwg_combs += rw_combs;
             }
             XmasLight::Unknown => {
-                panic!();
+                panic!("Simpler problem does not have unknown lights.");
             }
         }
     }
 
-    (red, white, green)
+    (red, rw_combs, rwg_combs)
 }
 
 #[cfg(test)]

@@ -13,9 +13,9 @@ fn run_test(in_file: &str, out_file: &str)
     let lights = parse_input(in_file);
     let expected_output = parse_output(out_file);
 
-    let generated_output = solve(lights).2;
+    let (_red, _rw_combs, rwg_combs) = solve(lights);
 
-    assert_eq!(expected_output, generated_output);
+    assert_eq!(expected_output, rwg_combs);
 }
 
 fn parse_input(in_file: &str) -> Vec<XmasLight>
