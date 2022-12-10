@@ -1,57 +1,100 @@
+use std::ops::Index;
+
 mod input_parse;
+
+pub struct City {
+    pub attractions: Vec<i32>,
+}
+
+pub struct Table {
+    table: Vec<i32>,
+    row_size: usize,
+}
 
 fn main()
 {
-    let input = include_str!("./tests/input0.txt");
-    let input_lines = &mut input.lines().map(|line| String::from(line));
-    let (mut cities, days) = input_parse::read_input(input_lines);
+    let (mut cities, days) = input_parse::read_input_from_stdin();
 
+    preprocessing(&mut cities);
+    let max_attractions = solve(cities, days);
+
+    println!("{}", max_attractions);
+}
+
+fn preprocessing(cities: &mut Vec<City>) {
     for city in cities.iter_mut() {
         prefix_sum(city);
     }
-
-    solve(cities, days as usize);
 }
 
-fn prefix_sum(vec: &mut Vec<i32>) {
+fn prefix_sum(city: &mut City) {
     let mut sum = 0;
-    for curr in vec.iter_mut() {
+    for curr in city.attractions.iter_mut() {
         sum += *curr;
         *curr = sum;
     }
 }
 
-fn solve(cities: Vec<Vec<i32>>, days: usize)
+fn solve(cities: Vec<City>, days: usize) -> i32
 {
-    let mut table: Vec<Vec<i32>> = Vec::with_capacity(cities.len());
-    for _ in 0..cities.len() { table.push(Vec::new()); }
+    let mut table = Table::new(cities.len(), days + 1);
 
     //initialize city 0
-    table[0].push(0);
+    table[(0, 0)] = 0;
     for day in 1..=days {
-        table[0].push(cities[0][day - 1]);
+        table[(0, day)] = cities[0].attractions[day - 1];
     }
 
+    //include cities one by one
     for city in 1..cities.len() {
         for day in 0..=days
         {
-            let mut max = table[city - 1][day];
+            let mut max = table[(city - 1, day)];
             for prec_day in 0..day {
-                let curr = table[city - 1][prec_day] + cities[city][day - prec_day - 1];
+                let curr = table[(city - 1, prec_day)] + cities[city].attractions[day - prec_day - 1];
 
                 if curr > max {
                     max = curr;
                 }
             }
 
-            table[city].push(max);
+            table[(city, day)] = max;
         }
     }
 
-    for city in 0..cities.len() {
-        for day in 0..=days {
-            print!("{:4}", table[city][day]);
-        }
-        println!("");
+    table[(cities.len() - 1, days)]
+}
+
+impl City {
+    pub fn new() -> City {
+        City { attractions: Vec::new() }
     }
 }
+
+impl Table {
+    pub fn new(rows: usize, columns: usize) -> Self {
+        Table { table: vec![0; rows * columns], row_size: columns }
+    }
+
+    fn __index(&self, row: usize, column: usize) -> usize {
+        self.row_size * row + column
+    }
+}
+
+impl Index<(usize, usize)> for Table {
+    type Output = i32;
+
+    fn index(&self, (row, column): (usize, usize)) -> &Self::Output {
+        self.table.index( self.__index(row, column) )
+    }
+}
+
+impl std::ops::IndexMut<(usize, usize)> for Table {
+
+    fn index_mut(&mut self, (row, column): (usize, usize)) -> &mut Self::Output {
+        self.table.index_mut( self.__index(row, column) )
+    }
+}
+
+#[cfg(test)]
+mod tests;
