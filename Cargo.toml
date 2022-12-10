@@ -2,6 +2,7 @@
 members = [
 	"hands-on/sliding_window_maximum",
 	"hands-on/segment_tree",
+	"hands-on/dynamic_programming",
 
 	"homework/leaders_in_array",
 	"homework/kadane_algorithm",

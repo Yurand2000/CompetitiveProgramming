@@ -3,3 +3,4 @@
 *.csv
 *.odt
 *.pdf
+Cargo.lock
