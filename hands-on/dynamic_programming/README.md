@@ -1,0 +1,49 @@
+# Hands-on #03: Dynamic Programming
+
+The provided crate produces both executables for the **holyday planning** problem and the **xmas lights** problem. To build and run the executables, open a terminal at the same location of this README file which has the cargo tool available, and run:
+
+- `cargo run --bin holyday_planning`
+- `cargo run --bin xmas_lights`
+
+To run the tests, files can be passed using:
+
+- `cargo run --bin NAME_OF_THE_PROBLEM < input_file.txt | diff - output_file.txt`
+
+As an example:
+
+- `cargo run --bin xmas_lights < ./src/bin/xmas_lights/tests/input0.txt | diff - ./src/bin/xmas_lights/tests/output0.txt`
+
+Additionally calling `cargo test` runs these same tests included in these folders, which are included into the test source files.
+An extra test for the **xmas lights** problem, which uses a bruteforce approach to generate test cases, is excluded from normal testing and can be run with `cargo test -- --ignored`.
+
+To *"install"* the generated executables to the current directory, run the command `cargo install --root . --path .` which will copy the generated executables in the `./bin/` folder.
+
+# Hands-on Description
+## Dynamic Programming
+In this hands-on, we are going to solve two problems with Dynamic Programming.
+For each problem, we have a pdf with the description of the problem and a set of tests to check the correctness of your implementations.
+
+- Problem *Holyday planning*: [Text](https://github.com/rossanoventurini/CompetitiveProgramming/tree/master/handson/handson03/problem_01/text.pdf) and [TestSet.zip](https://github.com/rossanoventurini/CompetitiveProgramming/tree/master/handson/handson03/problem_01/TestSet.zip)
+- Problem *Xmas Lights*: [Text](https://github.com/rossanoventurini/CompetitiveProgramming/tree/master/handson/handson03/problem_02/text.pdf) and [TestSet.zip](https://github.com/rossanoventurini/CompetitiveProgramming/tree/master/handson/handson03/problem_02/TestSet.zip). If your are not able to solve this problem, do your best and write on the report all your progresses.
+
+# Submission
+Submit 
+- a file ```lib.rs``` and a ```main.rs``` for each problem
+- a file ```Handson_03_solution_YOUR_NAME.pdf``` to [rossano.venturini@gmail.com](mailto:rossano.venturini@gmail.com) 
+by 23/12/2022. 
+
+- Source code ```lib.rs``` contains your solutions.
+- The ```main.rs``` file takes its input from stdin and produces its output to the stdout. This way we can use ```./solution < input1.txt | diff - output1.txt``` to compare its output with the expected one on the first test case.
+- A report ```Handson_03_solution_YOUR_NAME.pdf``` that briefly describes your solutions, your implementations, and an analysis of their time and space complexities. Add references to 
+any relevant source you consulted to find your solutions or to develop their implementations. 
+
+Before submitting your solutions, 
+- make sure your implementation successfully passes all the tests.
+- use ```cargo fmt``` to format your code. 
+- use ```cargo clippy``` to check your code.
+- use [Grammarly](https://grammarly.com/) to improve your English and avoid [tpyos](https://en.wiktionary.org/wiki/tpyo#English) :-). There is an [extension for vscode](https://marketplace.visualstudio.com/items?itemName=znck.grammarly).  
+
+## Cheating
+**Very important!** You are allowed to discuss possible solutions with other
+students, **BUT** you have to implement all the solutions by yourself. 
+Thus, sharing implementations with others is strictly **forbidden**.

@@ -41,14 +41,13 @@ fn solve(cities: Vec<City>, days: usize) -> i32
 
     //initialize city 0
     table[(0, 0)] = 0;
-    for day in 1..=days {
-        table[(0, day)] = cities[0].attractions[day - 1];
+    for day in 0..days {
+        table[(0, day + 1)] = cities[0].attractions[day];
     }
 
     //include cities one by one
     for city in 1..cities.len() {
-        for day in 0..=days
-        {
+        for day in 0..=days {
             let mut max = table[(city - 1, day)];
             for prec_day in 0..day {
                 let curr = table[(city - 1, prec_day)] + cities[city].attractions[day - prec_day - 1];

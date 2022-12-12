@@ -1,7 +1,6 @@
 mod input_parse;
-mod bruteforce;
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum XmasLight {
     Red,
     White,
@@ -13,17 +12,17 @@ fn main()
 {
     let lights = input_parse::read_input_from_stdin();
 
-    let (_red, _rw_combs, rwg_combs) = solve(lights);
+    let (_red, _rw_combs, rwg_combs) = solve(&lights);
     println!("{}", rwg_combs);
 }
 
-fn solve(lights: Vec<XmasLight>) -> (i32, i32, i32)
+fn solve(lights: &Vec<XmasLight>) -> (i32, i32, i32)
 {
     let (mut red, mut rw_combs, mut rwg_combs, mut k) = (0, 0, 0, 1);
     for light in lights.iter() {
         match light {
             XmasLight::Red => {
-                red += 1;
+                red += k;
             },
             XmasLight::White => {
                 rw_combs += red;
@@ -44,6 +43,7 @@ fn solve(lights: Vec<XmasLight>) -> (i32, i32, i32)
     (red, rw_combs, rwg_combs)
 }
 
+#[allow(dead_code)]
 fn solve_simple(lights: &Vec<XmasLight>) -> (i32, i32, i32)
 {
     let (mut red, mut rw_combs, mut rwg_combs) = (0, 0, 0);
